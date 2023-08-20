@@ -1,0 +1,61 @@
+# 3D KABLJM ZERO PRESSURE PBC
+log log_files/npt_log_${INIT}.txt
+
+
+variable	NCELL	index	25	#no of unit cell
+variable	RHO	index	1.2	#particle density
+variable	EQUI_TEMP	index	0.55	#equilibration temperature
+variable	COOL_TEMP	index	0.2	#cooled temperature
+variable	FRACTION	index	0.2
+variable	SEED	index	0
+
+# ------ System ------#
+units	lj
+dimension	3
+boundary	p	p	p
+atom_style	atomic
+#----- Initialization ------#
+lattice		sc	${RHO}
+region		simbox	block	0	${NCELL}	0	${NCELL}	0	${NCELL}
+create_box	2	simbox
+create_atoms	1	box
+
+set             type * type/ratio 2 ${FRACTION} ${SEED}
+
+mass            * 1.0
+velocity	all create ${EQUI_TEMP} ${SEED} mom yes rot yes 
+#--------- potential -------#
+pair_style	lj/cuts2	2.5
+pair_coeff    1 1     1.0     1.0      2.5
+pair_coeff    2 2     0.5     0.88     2.2
+pair_coeff    1 2     1.5     0.80     2.0
+#-------- Neighbour List ---------#
+neighbor	0.3	bin
+neigh_modify	every	10	delay	0	check	yes
+#--------- Simulation Runs -------#
+
+
+timestep	0.005	
+fix	equi	all	nvt	temp	${EQUI_TEMP}	${EQUI_TEMP}	$(100*dt)
+thermo 1000
+thermo_style  custom step temp press pxy pyz pxz pe fnorm
+run	100000
+
+unfix	equi
+fix	cool	all	nvt	temp	0.55	0.2	$(100*dt)
+#thermo 1000
+run	700000
+unfix	cool
+
+#fix	3 all box/relax x 0.0 y 0.0 z 0.0 nreset 100
+
+fix	zero_press	all	npt	temp	0.2	0.2	0.5	iso	$(press)	0.0	$(1000*dt)
+#thermo 1000
+run	100000
+
+
+#---------- Data Saving -----------#
+#thermo_style
+#dump
+write_dump all atom Configuration/config_${INIT}.dat
+
