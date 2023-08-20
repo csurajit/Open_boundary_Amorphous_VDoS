@@ -1,4 +1,4 @@
-# Open_boundary_Amorphous_VDoS
+# Open boundary Amorphous VDoS
 
 ## Generating open boundary solid droplets in two and three dimensions that uses LJ interaction between bi-disperse particles 
 
